@@ -1,0 +1,135 @@
+@import "tailwindcss";
+
+:root {
+  --bg: #f3efe6;
+  --bg-elevated: #ebe6db;
+  --fg: #121212;
+  --muted: #6a655c;
+  --border: #d4cec2;
+  --accent: #e23b28;
+  --accent-soft: rgba(226, 59, 40, 0.12);
+  --success: #1f7a4c;
+  --focus: #e23b28;
+}
+
+.dark {
+  --bg: #111110;
+  --bg-elevated: #1a1917;
+  --fg: #f3efe6;
+  --muted: #9a9488;
+  --border: #2e2c28;
+  --accent: #ff4d3a;
+  --accent-soft: rgba(255, 77, 58, 0.16);
+  --success: #3dbf7a;
+  --focus: #ff4d3a;
+}
+
+@theme inline {
+  --color-bg: var(--bg);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-fg: var(--fg);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-success: var(--success);
+  --font-sans: var(--font-geist-sans), "Noto Sans KR", sans-serif;
+  --font-display: var(--font-syne), var(--font-geist-sans), sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+}
+
+* {
+  border-color: var(--border);
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 3.5rem;
+}
+
+@media (min-width: 768px) {
+  html {
+    scroll-padding-top: 4rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+::selection {
+  background: var(--accent);
+  color: #fff;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(18px);
+  transition:
+    opacity 0.7s ease,
+    transform 0.7s ease;
+}
+
+.reveal.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* Large brand titles — sized so "SOMETHING." always fits the viewport */
+.display-lockup {
+  width: 100%;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.display-lockup__title {
+  /* Syne ExtraBold "SOMETHING." ≈ 9.5–10em wide — keep under viewport */
+  font-size: clamp(1.45rem, calc((100vw - 2.5rem) / 10), 8rem);
+  line-height: 1.05;
+  letter-spacing: -0.045em;
+  max-width: 100%;
+  overflow: visible;
+}
+
+.display-lockup__title > span {
+  display: block;
+  white-space: nowrap;
+}
+
+@media (min-width: 768px) {
+  .display-lockup__title {
+    font-size: clamp(3rem, calc((100vw - 5rem) / 8.2), 8rem);
+    letter-spacing: -0.035em;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
