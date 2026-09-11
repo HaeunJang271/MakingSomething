@@ -49,9 +49,11 @@ export function parseJoinApplication(raw: unknown): JoinApplication {
     name: String(data.name ?? "").trim(),
     email: String(data.email ?? "").trim(),
     make: Array.isArray(makeValue)
-      ? makeValue.map((item) => String(item))
-      : typeof makeValue === "string" && makeValue
-        ? [makeValue]
+      ? makeValue
+          .map((item) => String(item).trim())
+          .filter(Boolean)
+      : typeof makeValue === "string" && makeValue.trim()
+        ? [makeValue.trim()]
         : [],
     wantMake: String(data.wantMake ?? "").trim(),
     canDo: String(data.canDo ?? "").trim(),

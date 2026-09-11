@@ -24,17 +24,31 @@ export function JoinForm() {
   const [submitted, setSubmitted] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [selectedMake, setSelectedMake] = useState<string[]>([]);
+
+  function toggleMake(option: string) {
+    setSelectedMake((current) =>
+      current.includes(option)
+        ? current.filter((item) => item !== option)
+        : [...current, option],
+    );
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError(null);
+
+    if (selectedMake.length === 0) {
+      setError("무엇을 만드는지 하나 이상 선택해주세요.");
+      return;
+    }
 
     const form = event.currentTarget;
     const data = new FormData(form);
     const payload = {
       name: String(data.get("name") ?? ""),
       email: String(data.get("email") ?? ""),
-      make: data.getAll("make").map(String),
+      make: selectedMake,
       wantMake: String(data.get("wantMake") ?? ""),
       canDo: String(data.get("canDo") ?? ""),
       wantLearn: String(data.get("wantLearn") ?? ""),
@@ -50,7 +64,7 @@ export function JoinForm() {
     setPending(true);
     console.info("[JoinForm] Submitting application", {
       email: payload.email,
-      makeCount: payload.make.length,
+      make: payload.make,
     });
 
     try {
@@ -67,6 +81,7 @@ export function JoinForm() {
       }
 
       setSubmitted(true);
+      setSelectedMake([]);
       form.reset();
     } catch (submitError) {
       console.error("[JoinForm] Network error", submitError);
@@ -120,20 +135,28 @@ export function JoinForm() {
       <fieldset disabled={pending}>
         <legend className={labelClass}>03 — 무엇을 만드나요? *</legend>
         <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {makeOptions.map((option) => (
-            <label
-              key={option}
-              className="flex min-h-11 cursor-pointer items-center gap-3 border border-border px-4 py-3 text-sm hover:border-fg"
-            >
-              <input
-                type="checkbox"
-                name="make"
-                value={option}
-                className="accent-[var(--accent)]"
-              />
-              {option}
-            </label>
-          ))}
+          {makeOptions.map((option) => {
+            const checked = selectedMake.includes(option);
+            return (
+              <label
+                key={option}
+                className={cn(
+                  "flex min-h-11 cursor-pointer items-center gap-3 border px-4 py-3 text-sm transition-colors",
+                  checked ? "border-fg bg-bg-elevated" : "border-border hover:border-fg",
+                )}
+              >
+                <input
+                  type="checkbox"
+                  name="make"
+                  value={option}
+                  checked={checked}
+                  onChange={() => toggleMake(option)}
+                  className="accent-[var(--accent)]"
+                />
+                {option}
+              </label>
+            );
+          })}
         </div>
       </fieldset>
 
