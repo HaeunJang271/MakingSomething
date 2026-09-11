@@ -63,12 +63,19 @@ function toProviderPayload(application: JoinApplication): Record<string, string>
 }
 
 /**
- * Sends via FormSubmit. First submission triggers an activation email.
+ * Sends via FormSubmit. First submission triggers an activation email
+ * to JOIN_NOTIFY_EMAIL — that link must be clicked before real delivery works.
  */
 async function postFormSubmit(
   notifyEmail: string,
   application: JoinApplication,
 ): Promise<void> {
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
+    process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim() ||
+    "https://making-something-one.vercel.app";
+  const origin = siteUrl.startsWith("http") ? siteUrl : `https://${siteUrl}`;
+
   const response = await fetch(
     `https://formsubmit.co/ajax/${encodeURIComponent(notifyEmail)}`,
     {
@@ -76,6 +83,8 @@ async function postFormSubmit(
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
+        Origin: origin,
+        Referer: `${origin}/join`,
       },
       body: JSON.stringify({
         ...toProviderPayload(application),
@@ -95,6 +104,19 @@ async function postFormSubmit(
     parsed = {};
   }
 
+  const message = parsed.message ?? "";
+  const needsActivation = /activation|activate form/i.test(message);
+
+  if (needsActivation) {
+    console.error("[join] FormSubmit needs email activation", {
+      to: notifyEmail,
+      message,
+    });
+    throw new Error(
+      `수신 이메일(${notifyEmail}) 활성화가 필요합니다. Gmail에서 FormSubmit 활성화 메일의 Activate Form 링크를 눌러주세요. (스팸함도 확인)`,
+    );
+  }
+
   const success =
     parsed.success === true ||
     parsed.success === "true" ||
@@ -106,15 +128,11 @@ async function postFormSubmit(
       detail: text.slice(0, 400),
     });
     throw new Error(
-      parsed.message ||
-        "지원서 전송에 실패했습니다. 수신 이메일 활성화가 필요할 수 있습니다.",
+      message || "지원서 전송에 실패했습니다. 잠시 후 다시 시도해주세요.",
     );
   }
 
-  console.info("[join] Delivered via FormSubmit", {
-    to: notifyEmail,
-    message: parsed.message,
-  });
+  console.info("[join] Delivered via FormSubmit", { to: notifyEmail });
 }
 
 async function postJson(
