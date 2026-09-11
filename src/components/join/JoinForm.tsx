@@ -1,8 +1,12 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import { deliverJoinViaFormSubmit } from "@/lib/join/formsubmit";
+import {
+  parseJoinApplication,
+  validateJoinApplication,
+} from "@/lib/join/validate";
 import { cn } from "@/lib/utils";
-import type { JoinSubmitResult } from "@/types/join";
 
 const makeOptions = [
   "개발자",
@@ -17,8 +21,14 @@ const makeOptions = [
   "기타",
 ] as const;
 
+/** Inbox that receives join applications via FormSubmit. */
+const NOTIFY_EMAIL =
+  process.env.NEXT_PUBLIC_JOIN_NOTIFY_EMAIL?.trim() ||
+  "haeunjang271@gmail.com";
+
 /**
- * Join application form that posts to /api/join.
+ * Join application form. Delivers via FormSubmit from the browser
+ * because serverless IPs are often blocked by FormSubmit.
  */
 export function JoinForm() {
   const [submitted, setSubmitted] = useState(false);
@@ -38,54 +48,48 @@ export function JoinForm() {
     event.preventDefault();
     setError(null);
 
-    if (selectedMake.length === 0) {
-      setError("무엇을 만드는지 하나 이상 선택해주세요.");
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    const application = parseJoinApplication({
+      name: data.get("name"),
+      email: data.get("email"),
+      make: selectedMake,
+      wantMake: data.get("wantMake"),
+      canDo: data.get("canDo"),
+      wantLearn: data.get("wantLearn"),
+      joinExisting: data.get("joinExisting"),
+      ownIdea: data.get("ownIdea"),
+      github: data.get("github"),
+      portfolio: data.get("portfolio"),
+      website: data.get("website"),
+      other: data.get("other"),
+      agreement: data.get("agreement"),
+    });
+
+    const validationError = validateJoinApplication(application);
+    if (validationError) {
+      setError(validationError);
       return;
     }
 
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const payload = {
-      name: String(data.get("name") ?? ""),
-      email: String(data.get("email") ?? ""),
-      make: selectedMake,
-      wantMake: String(data.get("wantMake") ?? ""),
-      canDo: String(data.get("canDo") ?? ""),
-      wantLearn: String(data.get("wantLearn") ?? ""),
-      joinExisting: String(data.get("joinExisting") ?? ""),
-      ownIdea: String(data.get("ownIdea") ?? ""),
-      github: String(data.get("github") ?? ""),
-      portfolio: String(data.get("portfolio") ?? ""),
-      website: String(data.get("website") ?? ""),
-      other: String(data.get("other") ?? ""),
-      agreement: data.get("agreement") === "on",
-    };
-
     setPending(true);
     console.info("[JoinForm] Submitting application", {
-      email: payload.email,
-      make: payload.make,
+      email: application.email,
+      make: application.make,
     });
 
     try {
-      const response = await fetch("/api/join", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = (await response.json()) as JoinSubmitResult;
-
-      if (!response.ok || !result.ok) {
-        setError(result.message || "지원서 전송에 실패했습니다.");
-        return;
-      }
-
+      await deliverJoinViaFormSubmit(application, NOTIFY_EMAIL);
       setSubmitted(true);
       setSelectedMake([]);
       form.reset();
     } catch (submitError) {
-      console.error("[JoinForm] Network error", submitError);
-      setError("네트워크 오류가 발생했습니다. 잠시 후 다시 시도해주세요.");
+      console.error("[JoinForm] Submit failed", submitError);
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "지원서 전송에 실패했습니다. 잠시 후 다시 시도해주세요.",
+      );
     } finally {
       setPending(false);
     }
@@ -142,7 +146,9 @@ export function JoinForm() {
                 key={option}
                 className={cn(
                   "flex min-h-11 cursor-pointer items-center gap-3 border px-4 py-3 text-sm transition-colors",
-                  checked ? "border-fg bg-bg-elevated" : "border-border hover:border-fg",
+                  checked
+                    ? "border-fg bg-bg-elevated"
+                    : "border-border hover:border-fg",
                 )}
               >
                 <input
