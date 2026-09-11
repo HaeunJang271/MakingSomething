@@ -32,8 +32,22 @@ Open [http://localhost:3000](http://localhost:3000).
 - `/projects` — Project archive
 - `/projects/[id]` — Project detail
 - `/makers` — Makers
-- `/join` — Application form (frontend-only; wire Formspree/Tally/API in `JoinForm`)
+- `/join` — Application form (`POST /api/join`)
 
-## Content note
+## Join form setup
 
-Demo makers and illustrative failure-log copy are clearly labeled as placeholders.
+지원서는 `/api/join`으로 전송됩니다. 아래 중 **하나**를 `.env.local`(로컬) / Vercel Environment Variables(배포)에 넣으세요.
+
+```bash
+# A) Formspree
+FORMSPREE_FORM_ID=xxxxxxxx
+
+# B) 이메일 수신 (FormSubmit)
+JOIN_NOTIFY_EMAIL=you@example.com
+
+# C) 커스텀 웹훅
+JOIN_WEBHOOK_URL=https://hooks.example.com/...
+```
+
+로컬에서 env가 없으면 development 모드로 콘솔에만 기록되고 성공 처리됩니다.
+

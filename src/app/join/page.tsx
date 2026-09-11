@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { JoinPageContent } from "@/components/join/JoinForm";
+import { JoinPageContent } from "@/components/join/JoinPageContent";
 import { createMetadata } from "@/lib/seo";
 
 export const metadata: Metadata = createMetadata({
